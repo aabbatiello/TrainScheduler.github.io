@@ -13,74 +13,99 @@ $(document).ready(function(){
 
 
 
-// Create a variable to reference the database
+// holds the firebase the data
 var database = firebase.database();
 
-    // Initial Values
-    var trainName = "";
-    var destination = "";
-    var trainTime = 0;
-    var frequency = 0;
-
-    // Capture Button Click
+    // button for adding trains 
     $("#submit").on("click", function(event) {
       // Don't refresh the page!
       event.preventDefault();
       console.log("working");
 
+    // Grabs user data entered into the fomr controls
+      var trainName = $("#trainName").val().trim();
+      var destination = $("#trainDestination").val().trim();
+      var trainTimeUnix = moment($("#trainTime").val().trim(), "HH:mm").subtract(10, "years").format("X");
+      var frequency = $("#trainFrequency").val().trim();
 
-
-    // YOUR TASK!!!
-      // Code in the logic for storing and retrieving the most recent user.
-      // Don't forget to provide initial data to your Firebase database.
-      trainName = $("#trainName").val().trim();
-      destination = $("#trainDestination").val().trim();
-      trainTime = $("#trainTime").val().trim();
-      frequency = $("#trainFrequency").val().trim();
-
-      console.log(trainName, destination, trainTime, frequency)
-
-      database.ref().push({
-        trainName: trainName,
+     var newTrain = {
+        name: trainName,
         destination: destination,
-        trainTime: trainTime,
+        trainTime: trainTimeUnix,
         frequency: frequency
-    });
+      }
+
+   database.ref().push(newTrain);
+
+  console.log(newTrain.trainName, newTrain.destination, newTrain.trainTimeUnix, newTrain.frequency)
+
+// Clears all of the text-boxes
+  $("#trainName").val("");
+  $("#trainDestination").val("");
+  $("#trainTime").val("");
+  $("#trainFrequency").val("");
+
+  // Determine when the next train arrives.
+  return false;
+
   });
 
     // Firebase watcher + initial loader HINT: .on("value")
-    database.ref().on("child_added", function(childSnapshot){
-        var sv = childSnapshot.val();
-        console.log("sv", sv);
+    database.ref().on("child_added", function(childSnapshot, prevChildKey){
 
-        var svArr = Object.keys(sv);
-        console.log("svArr", svArr);
-
-      var lastIndex = svArr.length-1;
-
-      var lastKey = svArr[lastIndex];
-
-      var lastObj = sv[lastKey]
+        console.log(childSnapshot.val());
 
 
-        console.log(sv.trainName)
-        console.log(sv.destination)
-        console.log(sv.trainTime)
-        console.log(sv.frequency)
+    // Store everything into a variable.
+    var tName = childSnapshot.val().name;
+    var tDestination = childSnapshot.val().destination;
+    var tFrequency = childSnapshot.val().frequency;
+    var tFirstTrain = childSnapshot.val().trainTime;
 
+  // Calculate the minutes until arrival using hardcore math
+  // Calculate the minutes till arrival using unix,
+  var differenceTimes = moment().diff(moment.unix(tFirstTrain), "minutes");
+  var tRemainder = moment().diff(moment.unix(tFirstTrain), "minutes") % tFrequency ;
+  var tMinutes = tFrequency - tRemainder;
 
-$("#table").append("<tr><td>"+sv.trainName+"</td><td>"+sv.destination+"</td><td>"+sv.trainTime+"</td><td>"+sv.frequency+"</td></tr>");
+  // To calculate the arrival time, add the tMinutes to the currrent time
+  var tArrival = moment().add(tMinutes, "m").format("hh:mm A"); 
+  console.log(tMinutes);
+  console.log(tArrival);
 
+  console.log(moment().format("hh:mm A"));
+  console.log(tArrival);
+  console.log(moment().format("X"));
 
+  // Add each train's data into the table 
+  $("#table").append("<tr><td>" + tName + "</td><td>" + tDestination + "</td><td>" + tFrequency + "</td><td>" + tArrival + "</td><td>" + tMinutes + "</td></tr>");
 
-  },
-
-    function(errorObject){
-      console.log("The read failed: " + errrorObject.code);
   });
-
-
-
-
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
